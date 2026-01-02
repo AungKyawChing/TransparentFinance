@@ -2,12 +2,74 @@
 <html>
 <head>
     <title>Transparent Bank</title>
-    <style>
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        .error { color: red; font-weight: bold; }
-    </style>
+<style>
+    /* পুরো পেজটি সুন্দর করার জন্য কিছু বেসিক ফন্ট */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #fdfdfd;
+    }
+
+    h2 {
+        text-align: center; /* টাইটেল মাঝখানে থাকবে */
+        color: #333;
+    }
+
+    /* ফর্ম কন্টেইনারকে বড় এবং মাঝখানে আনার স্টাইল */
+    #searchForm {
+        max-width: 600px; /* ফর্মের সর্বোচ্চ প্রস্থ */
+        margin: 40px auto; /* উপরে-নিচে ৪০পিক্সেল এবং ডানে-বামে অটো হয়ে মাঝখানে বসবে */
+        display: flex;
+        gap: 10px; /* ইনপুট এবং বাটনের মাঝখানের ফাঁকা জায়গা */
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* হালকা শ্যাডো যাতে প্রফেশনাল লাগে */
+        border-radius: 8px;
+    }
+
+    /* ইনপুট বক্স বড় করা */
+    #keyword {
+        flex: 1; /* ফর্মের বাকি জায়গা এটি দখল করবে */
+        padding: 15px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        outline: none;
+    }
+
+    #keyword:focus {
+        border-color: #007bff; /* ক্লিক করলে বর্ডার নীল হবে */
+    }
+
+    /* বাটন বড় করা */
+    #fetchBtn {
+        padding: 15px 25px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    #fetchBtn:hover {
+        background-color: #0056b3;
+    }
+
+    /* টেবিল স্টাইল */
+    table { 
+        border-collapse: collapse; 
+        width: 100%; 
+        margin-top: 20px;
+        background-color: #fff;
+    }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    .error { color: red; font-weight: bold; text-align: center; }
+    #message { text-align: center; margin-top: 10px; }
+</style>
+
 </head>
 <body>
     <h2>Transparent Bank</h2>
