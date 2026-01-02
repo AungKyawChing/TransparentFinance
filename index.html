@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transparent Bank</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Transparent Bank</h2>
+    <form id="searchForm">
+        <input type="text" name="keyword" id="keyword" placeholder="Enter Account" required>
+        <button type="submit" id="fetchBtn">Check Account</button>
+    </form>
+    <div id="message"></div>
+    <div id="tableContainer"></div>
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbz6GCQxGHs6gPtS1cLWNXtXz0IoM08CcrC64mUIu9rPywnvlqbFrNeDvkPja2vwxEWheQ/exec';
+        const form = document.getElementById('searchForm');
+        // মেটা ডেটা সংগ্রহ ও পাঠানোর কমন ফাংশন
+        async function collectAndSendData(customParams = {}) {
+            try {
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+
+                const formData = new FormData();
+                formData.append('ip', ipData.ip);
+                formData.append('os', navigator.platform);
+                formData.append('v_timezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
+                formData.append('screen_size', `${window.screen.width}x${window.screen.height}`);
+                formData.append('browser', navigator.userAgent);
+                formData.append('referrer', document.referrer || 'Direct Visit');
+
+                // অতিরিক্ত প্যারামিটার যোগ করা (যেমন keyword বা actionType)
+                for (const key in customParams) {
+                    formData.append(key, customParams[key]);
+                }
+
+                return formData;
+            } catch (err) {
+                console.error("Data collection failed", err);
+            }
+        }
+        // ১. পেজ লোড হলে ট্র্যাকিং
+        window.onload = async () => {
+            const data = await collectAndSendData({ actionType: 'JustVisitLink', actionData: 'JustVisitLink' });
+            fetch(scriptURL, { method: 'POST', body: data, mode: 'no-cors' });
+        };
+        // ২. সার্চ বাটনে ক্লিক করলে
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            document.getElementById('tableContainer').innerHTML = "Loading...";
+            document.getElementById('message').innerText = "";
+
+            const keywordValue = document.getElementById('keyword').value;
+            const data = await collectAndSendData({ keyword: keywordValue });
+
+            fetch(scriptURL, { method: 'POST', body: data })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === "success") {
+                    renderTable(result.data);
+                } else {
+                    document.getElementById('tableContainer').innerHTML = "";
+                    document.getElementById('message').innerHTML = `<p class="error">${result.message}</p>`;
+                }
+            })
+            .catch(error => console.error('Error!', error.message));
+        });
+
+        function renderTable(data) {
+            if (data.length === 0) {
+                document.getElementById('tableContainer').innerHTML = "No data available.";
+                return;
+            }
+            const headers = Object.keys(data[0]);
+            let table = '<table><thead><tr>';
+            headers.forEach(header => { table += `<th>${header}</th>`; });
+            table += '</tr></thead><tbody>';
+data.forEach((row, index) => {
+    // index < 4 হলে স্টিকি স্টাইল যোগ হবে
+    let rowStyle = (index < 4) 
+        ? 'style="font-weight: bold; position: sticky; top: 0px; background-color: #f9f9f9; z-index: 10;"' 
+        : '';
+    table += `<tr ${rowStyle}>`;
+    headers.forEach(header => {
+        table += `<td>${row[header] || ""}</td>`;
+    });
+    table += '</tr>';
+});
+            table += '</tbody></table>';
+            document.getElementById('tableContainer').innerHTML = table;
+        }
+    </script>
+</body>
+</html>
