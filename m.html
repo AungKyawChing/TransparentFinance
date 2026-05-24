@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>Google Sheet Local Form</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial; margin: 20px; background-color: #f0f2f5; }
+        .container { max-width: 600px; margin: auto; }
+        .page-section { background: white; padding: 25px; margin-bottom: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; margin-top: 0; }
+        label { display: block; margin-top: 10px; font-weight: bold; color: #555; }
+        select, input, button { margin: 8px 0; padding: 12px; width: 100%; display: block; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        button { background-color: #1a73e8; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 15px; }
+        button:hover { background-color: #1557b0; }
+        .loading { color: #f39c12; font-weight: bold; }
+    
+    									/* ইনপুট ফিল্ডের তালিকায় textarea যোগ করা হয়েছে এবং resize প্রপার্টি দেওয়া হয়েছে */
+select, input, textarea, button { 
+    margin: 8px 0; 
+    padding: 12px; 
+    width: 100%; 
+    display: block; 
+    box-sizing: border-box; 
+    border: 1px solid #ddd; 
+    border-radius: 6px; 
+    font-size: 14px; 
+}
+
+textarea { 
+    resize: vertical;      /* ইউজার যেন টেনে বড় করতে পারে */
+    min-height: 80px;      /* প্রাথমিক উচ্চতা */
+    font-family: inherit;  /* ফন্ট ঠিক রাখার জন্য */
+}
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="status" class="loading">শিট তালিকা লোড হচ্ছে...</div>
+
+    <div class="page-section">
+        <h2>Deposit Page</h2>
+        <label>১ম Sheet সিলেক্ট করুন</label>
+        <select class="sheet-list" id="dep_sheet1"></select>
+        <label>২য় Sheet সিলেক্ট করুন</label>
+        <select class="sheet-list" id="dep_sheet2"></select>
+        <label>Date Time (সেকেন্ড সহ)</label>
+        <input type="datetime-local" id="dep_time" step="1">
+        <textarea id="dep_desc" placeholder="Description"></textarea>
+        <input type="number" id="dep_amount" placeholder="Amount">
+        <button onclick="submitData('deposit', this)">Submit Deposit</button>
+    </div>
+
+    <div class="page-section">
+        <h2>Transfer Page</h2>
+        <label>১ম Sheet সিলেক্ট করুন (দাতা, -)</label>
+        <select class="sheet-list" id="trans_sheet1"></select>
+        <label>২য় Sheet সিলেক্ট করুন (গ্রহীতা, +)</label>
+        <select class="sheet-list" id="trans_sheet2"></select>
+        <input type="datetime-local" id="trans_time" step="1">
+        <textarea id="trans_desc" placeholder="Description"></textarea>
+        <input type="number" id="trans_amount" placeholder="Amount">
+        <button onclick="submitData('transfer', this)">Submit Transfer</button>
+    </div>
+
+    <div class="page-section">
+        <h2>Benefit Page</h2>
+        <label>১ম Sheet (Loan/Savings Account)</label>
+        <select class="sheet-list" id="ben_sheet1"></select>
+        <label>২য় Sheet (দাতা, -)</label>
+        <select class="sheet-list" id="ben_sheet2"></select>
+        <label>৩য় Sheet (গ্রহীতা, +)</label>
+        <select class="sheet-list" id="ben_sheet3"></select>
+        <input type="datetime-local" id="ben_time" step="1">
+        <textarea id="ben_desc" placeholder="Description"></textarea>
+        <select id="ben_type">
+            <option value="" disabled selected>Transaction Type নির্বাচন করুন</option>
+            <option value="Interest Payment">Loan</option>
+    										    <option value="Interest">Savings</option>
+																			</select>
+        <input type="number" id="ben_amount" placeholder="Amount">
+        <button onclick="submitData('benefit', this)">Submit Benefit</button>
+    </div>
+</div>
+
+<script>
+    // গুরুত্বপূর্ণ: আপনার Web App URL এখানে দিন
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxK48IfU1tDZSGhslq8qd0wGk7bokSsX0EzTtfvJxWlaPE3vY_7JA6KIYnajsPa-rYm/exec";
+
+    // পেজ লোড হলে ড্রপডাউনগুলো পপুলেট করা
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch(WEB_APP_URL)
+            .then(res => res.json())
+            .then(sheetNames => {
+                const dropdowns = document.querySelectorAll('.sheet-list');
+                dropdowns.forEach(select => {
+                    sheetNames.forEach(name => {
+                        let option = document.createElement('option');
+                        option.value = name;
+                        option.text = name;
+                        select.add(option);
+                    });
+                });
+                document.getElementById('status').innerText = "অনলাইন কানেক্টেড - শিট লিস্ট রেডি";
+                document.getElementById('status').style.color = "green";
+            })
+            .catch(err => {
+                document.getElementById('status').innerText = "এরর: শিট লিস্ট পাওয়া যায়নি!";
+                document.getElementById('status').style.color = "red";
+            });
+    });
+
+    function formatDateTime(val) {
+        if(!val) return "";
+        const d = new Date(val);
+        const pad = (n) => n < 10 ? '0' + n : n;
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + 
+               pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    async function submitData(type, btn) {
+        let payload = { pageType: type };
+        
+        if (type === 'deposit') {
+            payload.sheet1 = document.getElementById('dep_sheet1').value;
+            payload.sheet2 = document.getElementById('dep_sheet2').value;
+            payload.dateTime = formatDateTime(document.getElementById('dep_time').value);
+            payload.description = document.getElementById('dep_desc').value;
+            payload.amount = document.getElementById('dep_amount').value;
+        } else if (type === 'transfer') {
+            payload.sheet1 = document.getElementById('trans_sheet1').value;
+            payload.sheet2 = document.getElementById('trans_sheet2').value;
+            payload.dateTime = formatDateTime(document.getElementById('trans_time').value);
+            payload.description = document.getElementById('trans_desc').value;
+            payload.amount = document.getElementById('trans_amount').value;
+        } else if (type === 'benefit') {
+            payload.sheet1 = document.getElementById('ben_sheet1').value;
+            payload.sheet2 = document.getElementById('ben_sheet2').value;
+            payload.sheet3 = document.getElementById('ben_sheet3').value;
+            payload.dateTime = formatDateTime(document.getElementById('ben_time').value);
+            payload.description = document.getElementById('ben_desc').value;
+            payload.transactionType = document.getElementById('ben_type').value;
+            payload.amount = document.getElementById('ben_amount').value;
+        }
+
+        if(!payload.dateTime || !payload.amount) {
+            alert("সবগুলো তথ্য সঠিকভাবে দিন!");
+            return;
+        }
+
+        btn.innerText = "পাঠানো হচ্ছে...";
+        btn.disabled = true;
+
+        try {
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                body: JSON.stringify(payload)
+            });
+            alert("সফলভাবে শিটে সেভ করা হয়েছে!");
+        } catch (e) {
+            alert("Error: " + e.message);
+        } finally {
+            btn.innerText = "Submit";
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
